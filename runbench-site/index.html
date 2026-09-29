@@ -12,15 +12,15 @@
     <img class="mark" src="icon.png" alt="" width="48" height="48">
     <div class="title">
       <h1>RUNBENCH</h1>
-      <span class="version">1.0.2</span>
+      <span class="version">beta · 1.0.2<span id="count" hidden></span></span>
     </div>
-    <p class="summary">RUNBENCH is a desktop workbench for image and video prompts that works on the tools/APIs you already use.</p>
+    <p class="summary">A desktop workbench for image and video prompts that works on the tools/APIs you already use.</p>
     <p class="summary">Iterate in one operating hub with an AI agent that tracks staged iterations on gen APIs and ComfyUI workflows, and can edit live graph values and manage/ingest project files.</p>
     <div class="downloads">
-      <a class="button primary" href="https://pub-0173c5462c854dfa8aa24def4989bbf0.r2.dev/RUNBENCH-1.0.2-arm64.dmg">Download for Mac</a>
+      <a class="button" href="https://pub-0173c5462c854dfa8aa24def4989bbf0.r2.dev/RUNBENCH-1.0.2-arm64.dmg">Download for Mac</a>
       <div>
         <a class="button" href="https://pub-0173c5462c854dfa8aa24def4989bbf0.r2.dev/RUNBENCH%20Setup%201.0.2.exe">Download for Windows</a>
-        <p class="note">Windows may show a SmartScreen warning. Choose More info, then Run anyway. On a new Windows 11 PC, Smart App Control can block this unsigned installer entirely. Those PCs have to wait for a later signed build.</p>
+        <p class="note">SmartScreen may warn. Choose “More info”, then “Run anyway”. On a new Windows 11 PC, Smart App Control can block this installer until it is signed in a later build.</p>
       </div>
     </div>
     <footer>
@@ -28,5 +28,17 @@
       <a href="terms.html">Terms</a>
     </footer>
   </main>
+  <script>
+    function countReady(response) {
+      var row = response && response.table && response.table.rows && response.table.rows[0];
+      var cell = row && row.c && row.c[0];
+      var n = cell ? Number(String(cell.v).replace(/,/g, "")) : NaN;
+      if (!Number.isInteger(n) || n < 0) return;
+      var count = document.getElementById("count");
+      count.textContent = " · " + n + (n === 1 ? " install" : " installs");
+      count.hidden = false;
+    }
+  </script>
+  <script src="https://docs.google.com/spreadsheets/d/1XzfQ-wyReubF66PrqsTTUqbP1rgZRAtqzdyE8RUJEmQ/gviz/tq?tqx=out:json;responseHandler:countReady&range=A1"></script>
 </body>
 </html>
