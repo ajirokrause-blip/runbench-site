@@ -1,0 +1,113 @@
+:root {
+  color-scheme: dark;
+  background: #141414;
+  color: #cccccc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #141414;
+  color: #cccccc;
+  font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.page {
+  width: min(28rem, calc(100% - 2.5rem));
+  margin: 0 auto;
+  padding: 3.5rem 0 3rem;
+}
+
+.mark {
+  display: block;
+  width: 48px;
+  height: 48px;
+}
+
+h1 {
+  margin: 0.85rem 0 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.summary {
+  margin: 0 0 1.75rem;
+}
+
+.downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 0;
+}
+
+.button {
+  display: block;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #333333;
+  background: #1c1c1c;
+  color: #cccccc;
+  text-align: center;
+  text-decoration: none;
+}
+
+.button:hover,
+.button:focus-visible {
+  border-color: #5a5a5a;
+  background: #222222;
+}
+
+.note {
+  margin: 0.65rem 0 0;
+  color: #9d9d9d;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.home {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  color: #cccccc;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  font-size: 0.875rem;
+}
+
+.home .mark {
+  width: 28px;
+  height: 28px;
+}
+
+.doc h1 {
+  margin-top: 0;
+  letter-spacing: 0;
+  font-size: 1.25rem;
+}
+
+.doc p {
+  margin: 0 0 1rem;
+}
+
+.doc a {
+  color: #cccccc;
+}
+
+footer {
+  margin-top: 2.5rem;
+  color: #9d9d9d;
+  font-size: 0.8125rem;
+}
+
+footer a {
+  color: #9d9d9d;
+}
+
+footer a + a {
+  margin-left: 1rem;
+}
