@@ -90,6 +90,19 @@ h1 {
   font-size: 1.25rem;
 }
 
+.doc .effective {
+  margin: 0 0 1.25rem;
+  color: #9d9d9d;
+  font-size: 0.8125rem;
+}
+
+.doc h2 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
 .doc p {
   margin: 0 0 1rem;
 }
