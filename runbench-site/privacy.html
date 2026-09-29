@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Privacy — RUNBENCH</title>
+  <title>Privacy Policy — RUNBENCH</title>
   <link rel="icon" href="icon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,35 +13,39 @@
       <img class="mark" src="icon.png" alt="" width="28" height="28">
       RUNBENCH
     </a>
-    <h1>Privacy</h1>
-    <p class="effective">Effective September 29, 2026.</p>
-    <p>RUNBENCH is a free desktop beta from Alexander Krause. Contact: <a href="mailto:support@runbench.app">support@runbench.app</a>.</p>
-    <h2>Account</h2>
-    <p>Creating an account requires an email address and a password. Supabase Auth stores them at syfxeeujgygmosgiooiq.supabase.co. The password is stored as a sign-in credential. We do not keep a separate copy. Sign-in can be refused until that email is confirmed. A sign-in session is stored on your computer, encrypted with the operating system, and refreshed with Supabase while you stay signed in.</p>
-    <h2>Entitlement</h2>
-    <p>When you accept the beta, we store one record for that account: an id, whether access is active, the beta tier, and the time you signed up. Payment fields on that record are empty. While you are signed in, the app contacts Supabase to check that access and to download the current app configuration. That request carries your account token. Supabase can see the account id, the IP address, and the time.</p>
-    <h2>On your computer</h2>
-    <p>Projects, prompts, notes, generated files, and the API keys you add stay on your computer. API keys and the sign-in session are stored with the operating system's encryption. We do not upload projects or API keys to our server. Uninstalling the app does not delete the account. Files on the computer remain until you delete them. The beta is not a backup.</p>
-    <h2>Chat and generation APIs</h2>
-    <p>A chat request goes from your computer to the chat provider you connected, using your key. Those providers are Anthropic, OpenAI, and Google. An image or video generation goes from your computer to the API you connected, using your key. Those APIs are Black Forest Labs (Flux), Ideogram, Runway, and Stability AI. Images you attach to a generation are sent the same way. We do not receive a copy of those requests on our server. Each provider handles the prompt under its own terms.</p>
-    <h2>Midjourney</h2>
-    <p>Midjourney is not called with an API key. The app copies the prompt to your clipboard and opens midjourney.com in the app's browser. What you do on that site, including any login, is between you and Midjourney. That site can set cookies inside the app on your computer. We do not receive your Midjourney login.</p>
-    <h2>ComfyUI</h2>
-    <p>ComfyUI runs on a computer you choose. Traffic to it does not go through our server.</p>
-    <h2>Downloads and updates</h2>
-    <p>The website, the installers, and the app's update check are hosted by Cloudflare. Cloudflare can see the IP address and basic request data for a download or an update check. The update check does not include your email or your projects.</p>
-    <h2>What we do not do</h2>
-    <p>We do not sell personal information. We do not share it for advertising. We do not use a third-party analytics SDK. We do not track you across other websites, and we do not respond to Do Not Track signals. Stripe checkout in the app is off. No card number is collected. If a paid plan is offered later, this policy will be updated before any charge.</p>
-    <h2>How long</h2>
-    <p>We keep the account and the entitlement record until you ask us to delete them or we close the beta. Supabase and Cloudflare keep their own connection logs to operate and secure their services. Those logs can include IP address, time, and, for Supabase, the account id. We do not use them for advertising. After a deletion, a backup at Supabase may keep a copy for a short time.</p>
-    <h2>Access and deletion</h2>
-    <p>Email <a href="mailto:support@runbench.app">support@runbench.app</a> to see what we store, to correct the email on the account, or to delete the account and the entitlement record. We will delete the Supabase login and the entitlement row. We cannot delete files that remain on your computer, or prompts you already sent to a provider.</p>
-    <h2>Age</h2>
-    <p>RUNBENCH is for people 18 and older. We do not knowingly collect personal information from children under 13.</p>
-    <h2>Outside the United States</h2>
-    <p>We do not aim this beta at the UK or the European Economic Area. If you are there, you can email us to access or delete your account. We have not appointed a representative in those regions.</p>
-    <h2>Changes</h2>
-    <p>If we change this policy, we will change the date at the top and post the new version on this page.</p>
+    <h1>Privacy Policy</h1>
+    <p class="effective">Effective September 29, 2026</p>
+    <p>RUNBENCH ("RUNBENCH," "we," "us," or "our") is a free desktop application currently offered in beta by Alexander Krause. This Privacy Policy describes how we collect, use, store, and disclose information in connection with your use of the RUNBENCH application and website (collectively, the "Service"). By creating an account or using the Service, you acknowledge that you have read and understood this Policy. For any questions, contact us at <a href="mailto:support@runbench.app">support@runbench.app</a>.</p>
+    <h2>1. Information We Collect</h2>
+    <p>Account information. To create an account, you must provide an email address and a password. These credentials are stored and managed by our authentication provider, Supabase Auth, at syfxeeujgygmosgiooiq.supabase.co. Your password is retained solely as a sign-in credential by Supabase; we do not maintain a separate copy. We may decline to authenticate an account until its associated email address has been confirmed. A sign-in session is stored locally on your device, encrypted by your operating system, and periodically refreshed through Supabase for the duration of your session.</p>
+    <p>Entitlement information. When you accept the beta, we create a single entitlement record associated with your account, consisting of an account identifier, an access status, the applicable tier (beta), and the date of sign-up. The payment-related fields of this record remain empty during the beta. While you are signed in, the application communicates with Supabase to verify your access status and to retrieve the current application configuration. These requests transmit your account authentication token, and Supabase may observe the associated account identifier, IP address, and request timestamp.</p>
+    <h2>2. Information Stored Locally on Your Device</h2>
+    <p>Your projects, prompts, notes, generated files, and any API keys you provide are stored locally on your device and are not transmitted to our servers. API keys and your sign-in session are stored using your operating system's encryption facilities. Uninstalling the application does not delete your account, and files stored on your device remain until you delete them. The Service is not a backup service, and we assume no responsibility for the preservation of locally stored data.</p>
+    <h2>3. Third-Party Providers You Connect</h2>
+    <p>The Service enables you to connect third-party artificial-intelligence providers using your own API keys. When you do so:</p>
+    <p>Chat providers. Chat requests are transmitted directly from your device to the provider you have connected, authenticated with your key. Supported chat providers are Anthropic, OpenAI, and Google.</p>
+    <p>Generation providers. Image and video generation requests, including any images you attach, are transmitted directly from your device to the provider you have connected, authenticated with your key. Supported generation providers are Black Forest Labs (Flux), Ideogram, Runway, and Stability AI.</p>
+    <p>We do not receive, intercept, or retain copies of these requests on our servers. Each provider processes your content under its own terms of service and privacy policy, and we encourage you to review them.</p>
+    <p>Midjourney. Midjourney is not accessed via API key. The application copies your prompt to your device clipboard and opens midjourney.com within the application's embedded browser. Your activity on that site, including any login, is governed solely by your relationship with Midjourney, and that site may set cookies within the embedded browser on your device. We do not receive your Midjourney credentials.</p>
+    <p>ComfyUI. ComfyUI operates on a computer of your choosing, and traffic to it does not pass through our servers.</p>
+    <h2>4. Website, Downloads, and Updates</h2>
+    <p>Our website, application installers, and the application's update-check mechanism are hosted by Cloudflare. In the course of serving a download or an update check, Cloudflare may observe your IP address and standard request metadata. Update checks do not transmit your email address, projects, or locally stored content.</p>
+    <h2>5. How We Use Information</h2>
+    <p>We use the information described above solely to provide, maintain, secure, and improve the Service — specifically, to authenticate your account, verify your entitlement, deliver application configuration, and operate our hosting and update infrastructure. We do not use your information for advertising or profiling.</p>
+    <h2>6. What We Do Not Do</h2>
+    <p>We do not sell your personal information. We do not share your personal information for advertising or cross-context behavioral advertising. We do not employ third-party analytics software-development kits. We do not track you across other websites or services, and because we do not track you, we do not respond to "Do Not Track" browser signals. In-application Stripe checkout is disabled, and no payment-card information is collected. Should a paid plan be introduced in the future, this Policy will be updated before any charge is imposed.</p>
+    <h2>7. Data Retention</h2>
+    <p>We retain your account and entitlement record until you request their deletion or until we discontinue the beta. Our infrastructure providers, Supabase and Cloudflare, maintain their own connection and operational logs as necessary to operate and secure their services; such logs may include IP address, timestamp, and, in the case of Supabase, the account identifier. We do not use these logs for advertising. Following a deletion request, residual copies may persist in Supabase's backups for a limited period before being overwritten.</p>
+    <h2>8. Your Choices and Rights</h2>
+    <p>You may contact us at <a href="mailto:support@runbench.app">support@runbench.app</a> to request access to the information we hold about you, to correct the email address associated with your account, or to delete your account and entitlement record. Upon a deletion request, we will delete your Supabase login credential and your entitlement record. We are unable to delete files that remain on your device or content you have already transmitted to a third-party provider, as such content is outside our control.</p>
+    <h2>9. Children</h2>
+    <p>The Service is intended for individuals eighteen (18) years of age or older. We do not knowingly collect personal information from children under the age of thirteen (13). If we become aware that we have collected such information, we will delete it.</p>
+    <h2>10. Users Outside the United States</h2>
+    <p>The Service is operated from the United States and is not directed at users in the United Kingdom or the European Economic Area. We have not appointed a representative in those jurisdictions. If you are located outside the United States and use the Service, you may contact us at <a href="mailto:support@runbench.app">support@runbench.app</a> to access or delete your account. By using the Service, you consent to the transfer and processing of your information in the United States.</p>
+    <h2>11. Changes to This Policy</h2>
+    <p>We may modify this Policy from time to time. When we do, we will revise the "Effective" date above and post the updated Policy on this page. Your continued use of the Service following any such change constitutes your acceptance of the revised Policy.</p>
+    <h2>12. Contact</h2>
+    <p>Questions regarding this Policy may be directed to <a href="mailto:support@runbench.app">support@runbench.app</a>.</p>
     <footer>
       <a href="index.html">Home</a>
       <a href="terms.html">Terms</a>
