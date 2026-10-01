@@ -6,28 +6,42 @@
   <title>RUNBENCH</title>
   <link rel="icon" href="favicon.png">
   <link rel="stylesheet" href="styles.css">
+  <script>
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches)
+      document.documentElement.classList.add("done");
+    else
+      document.documentElement.classList.add("run");
+  </script>
 </head>
 <body>
+  <div class="frame" aria-hidden="true"></div>
   <main class="page">
-    <img class="mark" src="icon.png" alt="" width="48" height="48">
-    <div class="title">
-      <h1>RUNBENCH</h1>
-      <span class="version">beta · 1.0.2<span id="count" hidden></span></span>
-    </div>
-    <p class="summary">A desktop workbench for image and video prompts, on the tools/APIs you already use.</p>
-    <p class="summary">Context-aware AI, staged iterations, agentic live ComfyUI graph writes, and automatic file ingest.</p>
-    <div class="downloads">
-      <a class="button" href="https://pub-0173c5462c854dfa8aa24def4989bbf0.r2.dev/RUNBENCH-1.0.2-arm64.dmg">Download for Mac</a>
-      <div>
-        <a class="button" href="https://pub-0173c5462c854dfa8aa24def4989bbf0.r2.dev/RUNBENCH%20Setup%201.0.2.exe">Download for Windows</a>
-        <p class="note">SmartScreen may warn. Choose “More info”, then “Run anyway”. On a new Windows 11 PC, Smart App Control can block this installer until it is signed in a later build.</p>
+    <div class="rise">
+      <img class="mark" src="icon.png" alt="" width="48" height="48">
+      <div class="title">
+        <h1>RUNBENCH</h1>
+        <span class="version">beta · 1.0.2<span id="count" hidden></span></span>
       </div>
+      <p class="summary">A desktop workbench for image and video prompts, on the tools/APIs you already use.</p>
+      <p class="summary">Context-aware AI, staged iterations, agentic live ComfyUI graph writes, and automatic file ingest.</p>
+      <div class="downloads">
+        <a class="button" href="https://pub-0173c5462c854dfa8aa24def4989bbf0.r2.dev/RUNBENCH-1.0.2-arm64.dmg">Download for Mac</a>
+        <div>
+          <a class="button" href="https://pub-0173c5462c854dfa8aa24def4989bbf0.r2.dev/RUNBENCH%20Setup%201.0.2.exe">Download for Windows</a>
+          <p class="note">SmartScreen may warn. Choose “More info”, then “Run anyway”. On a new Windows 11 PC, Smart App Control can block this installer until it is signed in a later build.</p>
+        </div>
+      </div>
+      <footer>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </footer>
     </div>
-    <footer>
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-    </footer>
   </main>
+  <div class="veil" id="veil" aria-hidden="true"></div>
+  <svg class="stage" id="stage" aria-hidden="true">
+    <polygon id="green-arrow" fill="#3dce7a"></polygon>
+    <polygon id="gray-arrow" fill="#cccccc"></polygon>
+  </svg>
   <script>
     function countReady(response) {
       var row = response && response.table && response.table.rows && response.table.rows[0];
@@ -40,5 +54,332 @@
     }
   </script>
   <script src="https://docs.google.com/spreadsheets/d/1XzfQ-wyReubF66PrqsTTUqbP1rgZRAtqzdyE8RUJEmQ/gviz/tq?tqx=out:json;responseHandler:countReady&range=A1"></script>
+  <script>
+    var root = document.documentElement;
+    var veil = document.getElementById("veil");
+    var frameEl = document.querySelector(".frame");
+    var rise = document.querySelector(".rise");
+    var greenArrow = document.getElementById("green-arrow");
+    var grayArrow = document.getElementById("gray-arrow");
+    var raf = 0;
+    var playing = false;
+    var started = 0;
+
+    var SPEED = 1600;
+    var HOLD = 0.5;
+    var FADE = 0.125;
+
+    function unit(a, b) {
+      var x = b.x - a.x;
+      var y = b.y - a.y;
+      if (Math.abs(y) <= Math.abs(x)) return { x: x < 0 ? -1 : 1, y: 0, len: Math.abs(x) };
+      return { x: 0, y: y < 0 ? -1 : 1, len: Math.abs(y) };
+    }
+
+    function leftNormal(d) {
+      return { x: d.y, y: -d.x };
+    }
+
+    function intersect(p, d, q, e) {
+      var det = d.x * e.y - d.y * e.x;
+      if (Math.abs(det) < 1e-6) return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
+      var s = ((q.x - p.x) * e.y - (q.y - p.y) * e.x) / det;
+      return { x: p.x + d.x * s, y: p.y + d.y * s };
+    }
+
+    function miter(corner, d1, d2, n1, n2, side, w) {
+      var p = { x: corner.x + n1.x * side * w, y: corner.y + n1.y * side * w };
+      var q = { x: corner.x + n2.x * side * w, y: corner.y + n2.y * side * w };
+      return intersect(p, d1, q, d2);
+    }
+
+    function metrics() {
+      var dpr = window.devicePixelRatio || 1;
+      var vw = innerWidth;
+      var vh = innerHeight;
+      var raw = Math.min(Math.min(vw, vh) * 0.52, 480);
+      var barDev = Math.max(2, Math.round(raw / 8 * dpr));
+      if (barDev % 2) barDev += 1;
+      var bar = barDev / dpr;
+      var w = bar / 2;
+      var k = w / 45;
+      var snap = function (v) { return Math.round(v * dpr) / dpr; };
+      var pt = function (x, y) {
+        return {
+          x: snap((vw - bar * 8) / 2 + x * k),
+          y: snap((vh - bar * 8) / 2 + y * k)
+        };
+      };
+      return { vw: vw, vh: vh, dpr: dpr, bar: bar, w: w, k: k, snap: snap, pt: pt };
+    }
+
+    function arrowGeom(kind, m) {
+      var corner;
+      var p0;
+      var p2;
+      var head;
+      var forward;
+      var along = m.snap(295 * m.k);
+      var across = m.snap(365 * m.k);
+      var lead = m.snap(220 * m.k);
+      var margin = m.bar;
+      var body = along + across;
+      var start = body + margin;
+      var exitPast;
+
+      if (kind === "green") {
+        corner = m.pt(585, 585);
+        exitPast = m.snap(corner.y + margin);
+        p0 = { x: m.snap(-margin - lead - start), y: corner.y };
+        p2 = { x: corner.x, y: m.snap(corner.y - (body + exitPast)) };
+        head = [[-45, -220], [135, 0], [45, 0], [-45, 0]];
+        forward = { x: 0, y: -1 };
+      } else {
+        corner = m.pt(135, 135);
+        exitPast = m.snap(m.vh - corner.y + margin);
+        p0 = { x: m.snap(m.vw + margin + lead + start), y: corner.y };
+        p2 = { x: corner.x, y: m.snap(corner.y + body + exitPast) };
+        head = [[45, 220], [-135, 0], [-45, 0], [45, 0]];
+        forward = { x: 0, y: 1 };
+      }
+
+      var d1 = unit(p0, corner);
+      var d2 = unit(corner, p2);
+      return {
+        p0: p0,
+        p1: corner,
+        p2: p2,
+        d1: d1,
+        d2: d2,
+        n1: leftNormal(d1),
+        n2: leftNormal(d2),
+        H: d1.len,
+        body: body,
+        past: across,
+        w: m.w,
+        k: m.k,
+        snap: m.snap,
+        start: start,
+        end: d1.len + body + exitPast,
+        head: head,
+        forward: forward
+      };
+    }
+
+    function sample(g, dist) {
+      if (dist <= g.H) {
+        return {
+          x: g.p0.x + g.d1.x * dist,
+          y: g.p0.y + g.d1.y * dist,
+          d: g.d1,
+          n: g.n1
+        };
+      }
+      var t = dist - g.H;
+      return {
+        x: g.p1.x + g.d2.x * t,
+        y: g.p1.y + g.d2.y * t,
+        d: g.d2,
+        n: g.n2
+      };
+    }
+
+    function pointsAttr(pts) {
+      var out = "";
+      for (var i = 0; i < pts.length; i++) {
+        if (i) out += " ";
+        out += pts[i].x.toFixed(2) + "," + pts[i].y.toFixed(2);
+      }
+      return out;
+    }
+
+    function side(p, n, w) {
+      return { x: p.x + n.x * w, y: p.y + n.y * w };
+    }
+
+    function headOutline(g, butt) {
+      var rot = Math.atan2(butt.d.y, butt.d.x) - Math.atan2(g.forward.y, g.forward.x);
+      var c = Math.cos(rot);
+      var s = Math.sin(rot);
+      var order = [3, 0, 1, 2];
+      var pts = [];
+      for (var i = 0; i < order.length; i++) {
+        var src = g.head[order[i]];
+        var X = src[0] * g.k;
+        var Y = src[1] * g.k;
+        var x = butt.x + X * c - Y * s;
+        var y = butt.y + X * s + Y * c;
+        if (i === 0) {
+          x = butt.x + butt.n.x * g.w;
+          y = butt.y + butt.n.y * g.w;
+        } else if (i === 3) {
+          x = butt.x - butt.n.x * g.w;
+          y = butt.y - butt.n.y * g.w;
+        }
+        pts.push({ x: x, y: y });
+      }
+      return pts;
+    }
+
+    function arrowPoints(g, tail, headDist) {
+      var a = sample(g, tail);
+      var b = sample(g, headDist);
+      var spans = tail < g.H && headDist > g.H;
+      var pts = [side(a, a.n, g.w)];
+      if (spans) pts.push(miter(g.p1, g.d1, g.d2, g.n1, g.n2, 1, g.w));
+      var head = headOutline(g, b);
+      for (var i = 0; i < head.length; i++) pts.push(head[i]);
+      if (spans) pts.push(miter(g.p1, g.d1, g.d2, g.n1, g.n2, -1, g.w));
+      pts.push(side(a, a.n, -g.w));
+      return pts;
+    }
+
+    function drawArrow(el, g, headDist) {
+      var tail = headDist - g.body;
+      var tip = headDist;
+      var limit = g.H + g.d2.len;
+      if (tip <= 0 || tail >= limit) {
+        el.setAttribute("points", "");
+        return;
+      }
+      tail = Math.max(0, tail);
+      if (tip > limit) tip = limit;
+      if (tip <= tail) {
+        el.setAttribute("points", "");
+        return;
+      }
+      el.setAttribute("points", pointsAttr(arrowPoints(g, tail, tip)));
+    }
+
+    function planFor(g) {
+      var v = SPEED;
+      var brake = 110;
+      var accelDist = 170;
+      var start = g.start;
+      var logo = g.H + g.past;
+      var end = g.end;
+      if (logo - start < accelDist + brake + 40) {
+        accelDist = (logo - start) * 0.22;
+        brake = (logo - start) * 0.16;
+      }
+      var accelTime = (2 * accelDist) / v;
+      var cruiseDist = (logo - brake) - (start + accelDist);
+      var cruiseTime = cruiseDist / v;
+      var brakeTime = (2 * brake) / v;
+      var launchTime = brakeTime;
+      var exitDist = end - (logo + brake);
+      var exitTime = exitDist / v;
+      var marks = [];
+      var t = 0;
+      marks.push({ t: t, d: start, ease: "in" });
+      t += accelTime;
+      marks.push({ t: t, d: start + accelDist, ease: "linear" });
+      t += cruiseTime;
+      marks.push({ t: t, d: logo - brake, ease: "out" });
+      t += brakeTime;
+      marks.push({ t: t, d: logo, ease: "linear" });
+      t += HOLD;
+      marks.push({ t: t, d: logo, ease: "in" });
+      t += launchTime;
+      marks.push({ t: t, d: logo + brake, ease: "linear" });
+      t += exitTime;
+      marks.push({ t: t, d: end, ease: "linear" });
+      return { marks: marks, total: t };
+    }
+
+    function ease(kind, u) {
+      if (kind === "in") return u * u;
+      if (kind === "out") return 1 - (1 - u) * (1 - u);
+      return u;
+    }
+
+    function headAt(plan, time) {
+      var marks = plan.marks;
+      if (time <= 0) return marks[0].d;
+      if (time >= plan.total) return marks[marks.length - 1].d;
+      for (var i = 1; i < marks.length; i++) {
+        if (time <= marks[i].t) {
+          var a = marks[i - 1];
+          var b = marks[i];
+          var span = b.t - a.t || 1;
+          var u = ease(a.ease, (time - a.t) / span);
+          return a.d + (b.d - a.d) * u;
+        }
+      }
+      return marks[marks.length - 1].d;
+    }
+
+    function revealOf(g, headDist) {
+      var straight = g.H + g.body;
+      var span = g.end - straight;
+      var begin = straight + span * 0.42;
+      var t = (headDist - begin) / (SPEED * FADE);
+      if (t <= 0) return 0;
+      if (t >= 1) return 1;
+      return t;
+    }
+
+    function applyReveal(u) {
+      veil.style.opacity = String(1 - u);
+      frameEl.style.opacity = String(u);
+      rise.style.opacity = String(u);
+    }
+
+    function drawAt(time) {
+      var m = metrics();
+      var green = arrowGeom("green", m);
+      var gray = arrowGeom("gray", m);
+      var plan = planFor(green);
+      var dist = headAt(plan, time);
+      drawArrow(greenArrow, green, dist);
+      drawArrow(grayArrow, gray, dist);
+      applyReveal(revealOf(green, dist));
+      return plan;
+    }
+
+    function tick(now) {
+      if (!playing) return;
+      var plan = drawAt((now - started) / 1000);
+      if ((now - started) / 1000 >= plan.total) finish();
+      else raf = requestAnimationFrame(tick);
+    }
+
+    function clearReveal() {
+      veil.style.opacity = "";
+      frameEl.style.opacity = "";
+      rise.style.opacity = "";
+    }
+
+    function finish() {
+      playing = false;
+      cancelAnimationFrame(raf);
+      root.classList.add("done");
+      clearReveal();
+    }
+
+    function play() {
+      cancelAnimationFrame(raf);
+      playing = true;
+      root.classList.remove("done");
+      root.classList.add("run");
+      started = performance.now();
+      drawAt(0);
+      raf = requestAnimationFrame(tick);
+    }
+
+    veil.addEventListener("pointerdown", function () {
+      if (!root.classList.contains("done")) finish();
+    });
+
+    window.addEventListener("keydown", function (event) {
+      if (root.classList.contains("done")) return;
+      if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+        if (event.key === " ") event.preventDefault();
+        finish();
+      }
+    });
+
+    if (root.classList.contains("run")) play();
+  </script>
 </body>
 </html>

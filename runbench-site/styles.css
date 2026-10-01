@@ -199,3 +199,65 @@ footer a:focus-visible {
 footer a + a {
   margin-left: 1rem;
 }
+
+body:has(.frame)::before {
+  content: none;
+}
+
+.frame {
+  position: fixed;
+  z-index: 2;
+  inset: clamp(0.85rem, 2.2vw, 1.35rem);
+  pointer-events: none;
+  opacity: 0;
+  background:
+    linear-gradient(#333333, #333333) left top / clamp(2.25rem, 7vw, 4.5rem) 1px no-repeat,
+    linear-gradient(#333333, #333333) left top / 1px clamp(2.25rem, 7vw, 4.5rem) no-repeat,
+    linear-gradient(#333333, #333333) right top / clamp(2.25rem, 7vw, 4.5rem) 1px no-repeat,
+    linear-gradient(#333333, #333333) right top / 1px clamp(2.25rem, 7vw, 4.5rem) no-repeat,
+    linear-gradient(#333333, #333333) left bottom / clamp(2.25rem, 7vw, 4.5rem) 1px no-repeat,
+    linear-gradient(#333333, #333333) left bottom / 1px clamp(2.25rem, 7vw, 4.5rem) no-repeat,
+    linear-gradient(#333333, #333333) right bottom / clamp(2.25rem, 7vw, 4.5rem) 1px no-repeat,
+    linear-gradient(#333333, #333333) right bottom / 1px clamp(2.25rem, 7vw, 4.5rem) no-repeat;
+}
+
+.rise { opacity: 1; }
+
+.veil {
+  position: fixed;
+  z-index: 4;
+  inset: 0;
+  background: #141414;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage {
+  position: fixed;
+  z-index: 5;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+html.run:not(.done) .stage { display: block; }
+
+html.run:not(.done) .veil {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+html.run:not(.done) .frame,
+html.run:not(.done) .rise { opacity: 0; }
+
+html.done .frame,
+html.done .rise { opacity: 1; }
+
+html.done .veil {
+  opacity: 0;
+  pointer-events: none;
+}
