@@ -38,7 +38,12 @@
     </div>
   </main>
   <div class="veil" id="veil" aria-hidden="true"></div>
-  <canvas class="stage" id="stage" aria-hidden="true"></canvas>
+  <div id="gh" class="shaft"></div>
+  <div id="gv" class="shaft"></div>
+  <svg id="ghead" class="head" aria-hidden="true"></svg>
+  <div id="yh" class="shaft"></div>
+  <div id="yv" class="shaft"></div>
+  <svg id="yhead" class="head" aria-hidden="true"></svg>
   <script>
     var pendingCount = null;
 
@@ -66,8 +71,12 @@
     var veil = document.getElementById("veil");
     var frameEl = document.querySelector(".frame");
     var rise = document.querySelector(".rise");
-    var stage = document.getElementById("stage");
-    var ctx = stage.getContext("2d", { alpha: true });
+    var gh = document.getElementById("gh");
+    var gv = document.getElementById("gv");
+    var ghead = document.getElementById("ghead");
+    var yh = document.getElementById("yh");
+    var yv = document.getElementById("yv");
+    var yhead = document.getElementById("yhead");
     var raf = 0;
     var playing = false;
     var started = 0;
@@ -85,19 +94,6 @@
 
     function leftNormal(d) {
       return { x: d.y, y: -d.x };
-    }
-
-    function intersect(p, d, q, e) {
-      var det = d.x * e.y - d.y * e.x;
-      if (Math.abs(det) < 1e-6) return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
-      var s = ((q.x - p.x) * e.y - (q.y - p.y) * e.x) / det;
-      return { x: p.x + d.x * s, y: p.y + d.y * s };
-    }
-
-    function miter(corner, d1, d2, n1, n2, side, w) {
-      var p = { x: corner.x + n1.x * side * w, y: corner.y + n1.y * side * w };
-      var q = { x: corner.x + n2.x * side * w, y: corner.y + n2.y * side * w };
-      return intersect(p, d1, q, d2);
     }
 
     function metrics() {
@@ -173,124 +169,115 @@
       };
     }
 
-    function sample(g, dist) {
-      if (dist <= g.H) {
-        return {
-          x: g.p0.x + g.d1.x * dist,
-          y: g.p0.y + g.d1.y * dist,
-          d: g.d1,
-          n: g.n1
-        };
-      }
-      var t = dist - g.H;
-      return {
-        x: g.p1.x + g.d2.x * t,
-        y: g.p1.y + g.d2.y * t,
-        d: g.d2,
-        n: g.n2
-      };
+    var built = "";
+
+    function buildHead(el, spec) {
+      el.setAttribute("viewBox", "0 0 " + spec.vbW + " " + spec.vbH);
+      el.setAttribute("width", spec.vbW);
+      el.setAttribute("height", spec.vbH);
+      el.style.width = spec.vbW + "px";
+      el.style.height = spec.vbH + "px";
+      el.style.transformOrigin = spec.ox + "px " + spec.oy + "px";
+      el.innerHTML = "<polygon points=\"" + spec.points + "\" fill=\"" + spec.color + "\"/>";
+      el._ox = spec.ox;
+      el._oy = spec.oy;
     }
 
-    function side(p, n, w) {
-      return { x: p.x + n.x * w, y: p.y + n.y * w };
-    }
-
-    function headOutline(g, butt) {
-      var rot = Math.atan2(butt.d.y, butt.d.x) - Math.atan2(g.forward.y, g.forward.x);
-      var c = Math.cos(rot);
-      var s = Math.sin(rot);
-      var order = [3, 0, 1, 2];
-      var pts = [];
-      for (var i = 0; i < order.length; i++) {
-        var src = g.head[order[i]];
-        var X = src[0] * g.k;
-        var Y = src[1] * g.k;
-        var x = butt.x + X * c - Y * s;
-        var y = butt.y + X * s + Y * c;
-        if (i === 0) {
-          x = butt.x + butt.n.x * g.w;
-          y = butt.y + butt.n.y * g.w;
-        } else if (i === 3) {
-          x = butt.x - butt.n.x * g.w;
-          y = butt.y - butt.n.y * g.w;
+    function ensure(m, body) {
+      var maxLen = Math.ceil(body + m.bar);
+      var key = maxLen + ":" + m.bar;
+      if (key === built) return;
+      built = key;
+      var shafts = [gh, gv, yh, yv];
+      for (var i = 0; i < shafts.length; i++) {
+        var el = shafts[i];
+        el._max = maxLen;
+        if (el === gv || el === yv) {
+          el.style.width = m.bar + "px";
+          el.style.height = maxLen + "px";
+        } else {
+          el.style.width = maxLen + "px";
+          el.style.height = m.bar + "px";
         }
-        pts.push({ x: x, y: y });
       }
-      return pts;
+      var w = m.w;
+      var lead = 220 * m.k;
+      buildHead(ghead, {
+        vbW: 4 * w,
+        vbH: lead,
+        ox: w,
+        oy: lead,
+        color: "#3dce7a",
+        points: "0,0 " + (4 * w) + "," + lead + " " + (2 * w) + "," + lead + " 0," + lead
+      });
+      buildHead(yhead, {
+        vbW: 4 * w,
+        vbH: lead,
+        ox: 3 * w,
+        oy: 0,
+        color: "#cccccc",
+        points: (4 * w) + "," + lead + " 0,0 " + (2 * w) + ",0 " + (4 * w) + ",0"
+      });
     }
 
-    function cornerPoint(g, side, amount) {
-      var full = miter(g.p1, g.d1, g.d2, g.n1, g.n2, side, g.w);
-      var flat = {
-        x: g.p1.x + g.n1.x * side * g.w,
-        y: g.p1.y + g.n1.y * side * g.w
-      };
-      var u = amount < 0 ? 0 : amount > 1 ? 1 : amount;
-      return {
-        x: flat.x + (full.x - flat.x) * u,
-        y: flat.y + (full.y - flat.y) * u
-      };
-    }
-
-    function arrowPoints(g, tail, headDist) {
-      var a = sample(g, tail);
-      var b = sample(g, headDist);
-      var headPast = headDist - g.H;
-      var tailBefore = g.H - tail;
-      var spans = headPast > 0 && tailBefore > 0;
-      var pts = [side(a, a.n, g.w)];
-      if (spans) {
-        var amount = headPast < tailBefore ? headPast : tailBefore;
-        amount = amount / g.w;
-        pts.push(cornerPoint(g, 1, amount));
+    function shaft(el, x, y, len, axis) {
+      if (len < 0.5) {
+        if (el._on !== false) {
+          el.style.opacity = "0";
+          el._on = false;
+        }
+        return;
       }
-      var head = headOutline(g, b);
-      for (var i = 0; i < head.length; i++) pts.push(head[i]);
-      if (spans) {
-        var amount = headPast < tailBefore ? headPast : tailBefore;
-        amount = amount / g.w;
-        pts.push(cornerPoint(g, -1, amount));
+      if (el._on !== true) {
+        el.style.opacity = "1";
+        el._on = true;
       }
-      pts.push(side(a, a.n, -g.w));
-      return pts;
+      var scale = len / el._max;
+      if (axis === "x")
+        el.style.transform = "translate3d(" + x + "px," + y + "px,0) scaleX(" + scale + ")";
+      else
+        el.style.transform = "translate3d(" + x + "px," + y + "px,0) scaleY(" + scale + ")";
     }
 
-    function fillArrow(context, pts, color) {
-      context.beginPath();
-      context.moveTo(pts[0].x, pts[0].y);
-      for (var i = 1; i < pts.length; i++) context.lineTo(pts[i].x, pts[i].y);
-      context.closePath();
-      context.fillStyle = color;
-      context.fill();
-    }
-
-    function arrowShape(g, headDist) {
-      var tail = headDist - g.body;
-      var tip = headDist;
-      var limit = g.H + g.d2.len;
-      if (tip <= 0 || tail >= limit || tip <= tail) return null;
-      if (tail < 0) tail = 0;
-      if (tip > limit) tip = limit;
-      return arrowPoints(g, tail, tip);
-    }
-
-    var viewW = 0;
-    var viewH = 0;
-
-    function prepare() {
-      var dpr = window.devicePixelRatio || 1;
-      var w = innerWidth;
-      var h = innerHeight;
-      var pw = Math.round(w * dpr);
-      var ph = Math.round(h * dpr);
-      if (w !== viewW || h !== viewH || stage.width !== pw || stage.height !== ph) {
-        viewW = w;
-        viewH = h;
-        stage.width = pw;
-        stage.height = ph;
+    function placeArrow(hEl, vEl, headEl, p, c, hToward, vToward, m, body) {
+      var w = m.w;
+      var headX = c.x + hToward * p;
+      var tailX = c.x + hToward * (p - body);
+      var hLen = 0;
+      var hX = 0;
+      if (p <= 0) {
+        var endX = headX + hToward * 2;
+        hX = Math.min(tailX, endX);
+        hLen = Math.abs(endX - tailX);
+      } else if (p < body) {
+        var junction = c.x - hToward * w + hToward;
+        if ((hToward > 0 && tailX < junction) || (hToward < 0 && tailX > junction)) {
+          hX = Math.min(tailX, junction);
+          hLen = Math.abs(junction - tailX);
+        }
       }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, w, h);
+      shaft(hEl, hX, c.y - w, hLen, "x");
+
+      var vLen = 0;
+      var vY = 0;
+      if (p > 0 && p < body) {
+        var headY = c.y + vToward * p + vToward * 2;
+        var outerY = c.y - vToward * w;
+        vY = Math.min(headY, outerY);
+        vLen = Math.abs(headY - outerY);
+      } else if (p >= body) {
+        var top = c.y + vToward * p + vToward * 2;
+        var bot = c.y + vToward * (p - body);
+        vY = Math.min(top, bot);
+        vLen = Math.abs(top - bot);
+      }
+      shaft(vEl, c.x - w, vY, vLen, "y");
+
+      var bx = p <= 0 ? headX : c.x;
+      var by = p <= 0 ? c.y : c.y + vToward * p;
+      var angle = p <= 0 ? 90 : 0;
+      headEl.style.opacity = "1";
+      headEl.style.transform = "translate3d(" + (bx - headEl._ox) + "px," + (by - headEl._oy) + "px,0) rotate(" + angle + "deg)";
     }
 
     function planFor(g) {
@@ -377,13 +364,11 @@
       var m = metrics();
       var green = arrowGeom("green", m);
       var gray = arrowGeom("gray", m);
+      ensure(m, green.body);
       var plan = planFor(green);
       var dist = headAt(plan, time);
-      prepare();
-      var greenPts = arrowShape(green, dist);
-      var grayPts = arrowShape(gray, dist);
-      if (greenPts) fillArrow(ctx, greenPts, "#3dce7a");
-      if (grayPts) fillArrow(ctx, grayPts, "#cccccc");
+      placeArrow(gh, gv, ghead, dist - green.H, m.pt(585, 585), 1, -1, m, green.body);
+      placeArrow(yh, yv, yhead, dist - gray.H, m.pt(135, 135), -1, 1, m, gray.body);
       applyReveal(revealOf(green, dist));
       return plan;
     }

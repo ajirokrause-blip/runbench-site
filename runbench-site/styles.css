@@ -232,17 +232,32 @@ body:has(.frame)::before {
   pointer-events: none;
 }
 
-.stage {
+.shaft,
+.head {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
   z-index: 5;
-  width: 100%;
-  height: 100%;
   display: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
   pointer-events: none;
+  transform-origin: 0 0;
+  will-change: transform;
+  opacity: 0;
 }
 
-html.run:not(.done) .stage { display: block; }
+.head { z-index: 6; overflow: visible; }
+
+#gh,
+#gv { background: #3dce7a; }
+
+#yh,
+#yv { background: #cccccc; }
+
+html.run:not(.done) .shaft,
+html.run:not(.done) .head { display: block; }
 
 html.run:not(.done) .veil {
   opacity: 1;
