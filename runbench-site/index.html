@@ -7,10 +7,14 @@
   <link rel="icon" href="favicon.png">
   <link rel="stylesheet" href="styles.css">
   <script>
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches)
+    var introSeen = false;
+    try { introSeen = sessionStorage.getItem("runbench-intro") === "1"; } catch (e) {}
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || introSeen)
       document.documentElement.classList.add("done");
-    else
+    else {
+      try { sessionStorage.setItem("runbench-intro", "1"); } catch (e) {}
       document.documentElement.classList.add("run");
+    }
   </script>
 </head>
 <body>
