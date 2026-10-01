@@ -45,9 +45,7 @@
   <div id="yv" class="shaft"></div>
   <svg id="yhead" class="head" aria-hidden="true"></svg>
   <script>
-    var pendingCount = null;
-
-    function applyCount(response) {
+    function countReady(response) {
       var row = response && response.table && response.table.rows && response.table.rows[0];
       var cell = row && row.c && row.c[0];
       var n = cell ? Number(String(cell.v).replace(/,/g, "")) : NaN;
@@ -56,16 +54,8 @@
       count.textContent = " · " + n + (n === 1 ? " install" : " installs");
       count.hidden = false;
     }
-
-    function countReady(response) {
-      if (!document.documentElement.classList.contains("done")) {
-        pendingCount = response;
-        return;
-      }
-      applyCount(response);
-    }
   </script>
-  <script src="https://docs.google.com/spreadsheets/d/1XzfQ-wyReubF66PrqsTTUqbP1rgZRAtqzdyE8RUJEmQ/gviz/tq?tqx=out:json;responseHandler:countReady&range=A1"></script>
+  <script async src="https://docs.google.com/spreadsheets/d/1XzfQ-wyReubF66PrqsTTUqbP1rgZRAtqzdyE8RUJEmQ/gviz/tq?tqx=out:json;responseHandler:countReady&range=A1"></script>
   <script>
     var root = document.documentElement;
     var veil = document.getElementById("veil");
@@ -391,10 +381,6 @@
       cancelAnimationFrame(raf);
       root.classList.add("done");
       clearReveal();
-      if (pendingCount) {
-        applyCount(pendingCount);
-        pendingCount = null;
-      }
     }
 
     function play() {
