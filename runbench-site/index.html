@@ -38,12 +38,12 @@
     </div>
   </main>
   <div class="veil" id="veil" aria-hidden="true"></div>
-  <svg class="stage" id="stage" aria-hidden="true">
-    <polygon id="green-arrow" fill="#3dce7a"></polygon>
-    <polygon id="gray-arrow" fill="#cccccc"></polygon>
-  </svg>
+  <canvas id="green-arrow" class="arrow" width="1" height="1" aria-hidden="true"></canvas>
+  <canvas id="gray-arrow" class="arrow" width="1" height="1" aria-hidden="true"></canvas>
   <script>
-    function countReady(response) {
+    var pendingCount = null;
+
+    function applyCount(response) {
       var row = response && response.table && response.table.rows && response.table.rows[0];
       var cell = row && row.c && row.c[0];
       var n = cell ? Number(String(cell.v).replace(/,/g, "")) : NaN;
@@ -51,6 +51,14 @@
       var count = document.getElementById("count");
       count.textContent = " · " + n + (n === 1 ? " install" : " installs");
       count.hidden = false;
+    }
+
+    function countReady(response) {
+      if (!document.documentElement.classList.contains("done")) {
+        pendingCount = response;
+        return;
+      }
+      applyCount(response);
     }
   </script>
   <script src="https://docs.google.com/spreadsheets/d/1XzfQ-wyReubF66PrqsTTUqbP1rgZRAtqzdyE8RUJEmQ/gviz/tq?tqx=out:json;responseHandler:countReady&range=A1"></script>
@@ -184,15 +192,6 @@
       };
     }
 
-    function pointsAttr(pts) {
-      var out = "";
-      for (var i = 0; i < pts.length; i++) {
-        if (i) out += " ";
-        out += pts[i].x.toFixed(2) + "," + pts[i].y.toFixed(2);
-      }
-      return out;
-    }
-
     function side(p, n, w) {
       return { x: p.x + n.x * w, y: p.y + n.y * w };
     }
@@ -221,34 +220,103 @@
       return pts;
     }
 
+    function cornerPoint(g, side, amount) {
+      var full = miter(g.p1, g.d1, g.d2, g.n1, g.n2, side, g.w);
+      var flat = {
+        x: g.p1.x + g.n1.x * side * g.w,
+        y: g.p1.y + g.n1.y * side * g.w
+      };
+      var u = amount < 0 ? 0 : amount > 1 ? 1 : amount;
+      return {
+        x: flat.x + (full.x - flat.x) * u,
+        y: flat.y + (full.y - flat.y) * u
+      };
+    }
+
     function arrowPoints(g, tail, headDist) {
       var a = sample(g, tail);
       var b = sample(g, headDist);
-      var spans = tail < g.H && headDist > g.H;
+      var headPast = headDist - g.H;
+      var tailBefore = g.H - tail;
+      var spans = headPast > 0 && tailBefore > 0;
       var pts = [side(a, a.n, g.w)];
-      if (spans) pts.push(miter(g.p1, g.d1, g.d2, g.n1, g.n2, 1, g.w));
+      if (spans) {
+        var amount = headPast < tailBefore ? headPast : tailBefore;
+        amount = amount / g.w;
+        pts.push(cornerPoint(g, 1, amount));
+      }
       var head = headOutline(g, b);
       for (var i = 0; i < head.length; i++) pts.push(head[i]);
-      if (spans) pts.push(miter(g.p1, g.d1, g.d2, g.n1, g.n2, -1, g.w));
+      if (spans) {
+        var amount = headPast < tailBefore ? headPast : tailBefore;
+        amount = amount / g.w;
+        pts.push(cornerPoint(g, -1, amount));
+      }
       pts.push(side(a, a.n, -g.w));
       return pts;
     }
 
-    function drawArrow(el, g, headDist) {
+    function paintArrow(canvas, pts, color) {
+      var dpr = window.devicePixelRatio || 1;
+      var ax = pts[0].x;
+      var ay = pts[0].y;
+      var minX = 0;
+      var minY = 0;
+      var maxX = 0;
+      var maxY = 0;
+      var local = "";
+      for (var i = 0; i < pts.length; i++) {
+        var x = pts[i].x - ax;
+        var y = pts[i].y - ay;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+        local += x.toFixed(2) + "," + y.toFixed(2) + " ";
+      }
+      if (canvas._sig !== local) {
+        canvas._sig = local;
+        var pad = 2;
+        var w = Math.ceil(maxX - minX) + pad * 2;
+        var h = Math.ceil(maxY - minY) + pad * 2;
+        var pw = Math.max(1, Math.round(w * dpr));
+        var ph = Math.max(1, Math.round(h * dpr));
+        if (canvas.width !== pw || canvas.height !== ph) {
+          canvas.width = pw;
+          canvas.height = ph;
+          canvas.style.width = w + "px";
+          canvas.style.height = h + "px";
+        }
+        var ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x - ax - minX + pad, pts[0].y - ay - minY + pad);
+        for (var j = 1; j < pts.length; j++) {
+          ctx.lineTo(pts[j].x - ax - minX + pad, pts[j].y - ay - minY + pad);
+        }
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        canvas._ox = minX - pad;
+        canvas._oy = minY - pad;
+      }
+      canvas.style.transform = "translate3d(" + (ax + canvas._ox) + "px," + (ay + canvas._oy) + "px,0)";
+    }
+
+    function drawArrow(canvas, g, headDist, color) {
       var tail = headDist - g.body;
       var tip = headDist;
       var limit = g.H + g.d2.len;
-      if (tip <= 0 || tail >= limit) {
-        el.setAttribute("points", "");
+      if (tip <= 0 || tail >= limit || tip <= tail) {
+        canvas.style.visibility = "hidden";
+        canvas._sig = "";
         return;
       }
-      tail = Math.max(0, tail);
+      if (tail < 0) tail = 0;
       if (tip > limit) tip = limit;
-      if (tip <= tail) {
-        el.setAttribute("points", "");
-        return;
-      }
-      el.setAttribute("points", pointsAttr(arrowPoints(g, tail, tip)));
+      canvas.style.visibility = "visible";
+      paintArrow(canvas, arrowPoints(g, tail, tip), color);
     }
 
     function planFor(g) {
@@ -319,10 +387,15 @@
       return t;
     }
 
+    var shown = -1;
+
     function applyReveal(u) {
-      veil.style.opacity = String(1 - u);
-      frameEl.style.opacity = String(u);
-      rise.style.opacity = String(u);
+      var v = Math.round(u * 1000) / 1000;
+      if (v === shown) return;
+      shown = v;
+      veil.style.opacity = String(1 - v);
+      frameEl.style.opacity = String(v);
+      rise.style.opacity = String(v);
     }
 
     function drawAt(time) {
@@ -331,8 +404,8 @@
       var gray = arrowGeom("gray", m);
       var plan = planFor(green);
       var dist = headAt(plan, time);
-      drawArrow(greenArrow, green, dist);
-      drawArrow(grayArrow, gray, dist);
+      drawArrow(greenArrow, green, dist, "#3dce7a");
+      drawArrow(grayArrow, gray, dist, "#cccccc");
       applyReveal(revealOf(green, dist));
       return plan;
     }
@@ -355,6 +428,10 @@
       cancelAnimationFrame(raf);
       root.classList.add("done");
       clearReveal();
+      if (pendingCount) {
+        applyCount(pendingCount);
+        pendingCount = null;
+      }
     }
 
     function play() {
@@ -363,6 +440,9 @@
       root.classList.remove("done");
       root.classList.add("run");
       started = performance.now();
+      shown = -1;
+      greenArrow._sig = "";
+      grayArrow._sig = "";
       drawAt(0);
       raf = requestAnimationFrame(tick);
     }

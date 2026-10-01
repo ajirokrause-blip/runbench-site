@@ -232,18 +232,17 @@ body:has(.frame)::before {
   pointer-events: none;
 }
 
-.stage {
+.arrow {
   position: fixed;
+  left: 0;
+  top: 0;
   z-index: 5;
-  inset: 0;
-  width: 100%;
-  height: 100%;
   display: none;
-  overflow: hidden;
   pointer-events: none;
+  will-change: transform;
 }
 
-html.run:not(.done) .stage { display: block; }
+html.run:not(.done) .arrow { display: block; }
 
 html.run:not(.done) .veil {
   opacity: 1;
