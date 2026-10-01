@@ -7,14 +7,16 @@
   <link rel="icon" href="favicon.png">
   <link rel="stylesheet" href="styles.css">
   <script>
-    var introSeen = false;
-    try { introSeen = sessionStorage.getItem("runbench-intro") === "1"; } catch (e) {}
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches || introSeen)
+    var nav = performance.getEntriesByType("navigation")[0];
+    var fromSite = false;
+    try {
+      if (document.referrer) fromSite = new URL(document.referrer).origin === location.origin;
+    } catch (e) {}
+    var replay = nav && nav.type === "reload";
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || (fromSite && !replay))
       document.documentElement.classList.add("done");
-    else {
-      try { sessionStorage.setItem("runbench-intro", "1"); } catch (e) {}
+    else
       document.documentElement.classList.add("run");
-    }
   </script>
 </head>
 <body>
