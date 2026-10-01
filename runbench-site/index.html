@@ -38,8 +38,7 @@
     </div>
   </main>
   <div class="veil" id="veil" aria-hidden="true"></div>
-  <canvas id="green-arrow" class="arrow" width="1" height="1" aria-hidden="true"></canvas>
-  <canvas id="gray-arrow" class="arrow" width="1" height="1" aria-hidden="true"></canvas>
+  <canvas class="stage" id="stage" aria-hidden="true"></canvas>
   <script>
     var pendingCount = null;
 
@@ -67,8 +66,8 @@
     var veil = document.getElementById("veil");
     var frameEl = document.querySelector(".frame");
     var rise = document.querySelector(".rise");
-    var greenArrow = document.getElementById("green-arrow");
-    var grayArrow = document.getElementById("gray-arrow");
+    var stage = document.getElementById("stage");
+    var ctx = stage.getContext("2d", { alpha: true });
     var raf = 0;
     var playing = false;
     var started = 0;
@@ -256,67 +255,42 @@
       return pts;
     }
 
-    function paintArrow(canvas, pts, color) {
-      var dpr = window.devicePixelRatio || 1;
-      var ax = pts[0].x;
-      var ay = pts[0].y;
-      var minX = 0;
-      var minY = 0;
-      var maxX = 0;
-      var maxY = 0;
-      var local = "";
-      for (var i = 0; i < pts.length; i++) {
-        var x = pts[i].x - ax;
-        var y = pts[i].y - ay;
-        if (x < minX) minX = x;
-        if (y < minY) minY = y;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
-        local += x.toFixed(2) + "," + y.toFixed(2) + " ";
-      }
-      if (canvas._sig !== local) {
-        canvas._sig = local;
-        var pad = 2;
-        var w = Math.ceil(maxX - minX) + pad * 2;
-        var h = Math.ceil(maxY - minY) + pad * 2;
-        var pw = Math.max(1, Math.round(w * dpr));
-        var ph = Math.max(1, Math.round(h * dpr));
-        if (canvas.width !== pw || canvas.height !== ph) {
-          canvas.width = pw;
-          canvas.height = ph;
-          canvas.style.width = w + "px";
-          canvas.style.height = h + "px";
-        }
-        var ctx = canvas.getContext("2d");
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, w, h);
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x - ax - minX + pad, pts[0].y - ay - minY + pad);
-        for (var j = 1; j < pts.length; j++) {
-          ctx.lineTo(pts[j].x - ax - minX + pad, pts[j].y - ay - minY + pad);
-        }
-        ctx.closePath();
-        ctx.fillStyle = color;
-        ctx.fill();
-        canvas._ox = minX - pad;
-        canvas._oy = minY - pad;
-      }
-      canvas.style.transform = "translate3d(" + (ax + canvas._ox) + "px," + (ay + canvas._oy) + "px,0)";
+    function fillArrow(context, pts, color) {
+      context.beginPath();
+      context.moveTo(pts[0].x, pts[0].y);
+      for (var i = 1; i < pts.length; i++) context.lineTo(pts[i].x, pts[i].y);
+      context.closePath();
+      context.fillStyle = color;
+      context.fill();
     }
 
-    function drawArrow(canvas, g, headDist, color) {
+    function arrowShape(g, headDist) {
       var tail = headDist - g.body;
       var tip = headDist;
       var limit = g.H + g.d2.len;
-      if (tip <= 0 || tail >= limit || tip <= tail) {
-        canvas.style.visibility = "hidden";
-        canvas._sig = "";
-        return;
-      }
+      if (tip <= 0 || tail >= limit || tip <= tail) return null;
       if (tail < 0) tail = 0;
       if (tip > limit) tip = limit;
-      canvas.style.visibility = "visible";
-      paintArrow(canvas, arrowPoints(g, tail, tip), color);
+      return arrowPoints(g, tail, tip);
+    }
+
+    var viewW = 0;
+    var viewH = 0;
+
+    function prepare() {
+      var dpr = window.devicePixelRatio || 1;
+      var w = innerWidth;
+      var h = innerHeight;
+      var pw = Math.round(w * dpr);
+      var ph = Math.round(h * dpr);
+      if (w !== viewW || h !== viewH || stage.width !== pw || stage.height !== ph) {
+        viewW = w;
+        viewH = h;
+        stage.width = pw;
+        stage.height = ph;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
     }
 
     function planFor(g) {
@@ -334,8 +308,9 @@
       var cruiseDist = (logo - brake) - (start + accelDist);
       var cruiseTime = cruiseDist / v;
       var brakeTime = (2 * brake) / v;
-      var launchTime = brakeTime;
-      var exitDist = end - (logo + brake);
+      var launch = 48;
+      var launchTime = (2 * launch) / v;
+      var exitDist = end - (logo + launch);
       var exitTime = exitDist / v;
       var marks = [];
       var t = 0;
@@ -349,7 +324,7 @@
       t += HOLD;
       marks.push({ t: t, d: logo, ease: "in" });
       t += launchTime;
-      marks.push({ t: t, d: logo + brake, ease: "linear" });
+      marks.push({ t: t, d: logo + launch, ease: "linear" });
       t += exitTime;
       marks.push({ t: t, d: end, ease: "linear" });
       return { marks: marks, total: t };
@@ -404,8 +379,11 @@
       var gray = arrowGeom("gray", m);
       var plan = planFor(green);
       var dist = headAt(plan, time);
-      drawArrow(greenArrow, green, dist, "#3dce7a");
-      drawArrow(grayArrow, gray, dist, "#cccccc");
+      prepare();
+      var greenPts = arrowShape(green, dist);
+      var grayPts = arrowShape(gray, dist);
+      if (greenPts) fillArrow(ctx, greenPts, "#3dce7a");
+      if (grayPts) fillArrow(ctx, grayPts, "#cccccc");
       applyReveal(revealOf(green, dist));
       return plan;
     }
@@ -441,8 +419,6 @@
       root.classList.add("run");
       started = performance.now();
       shown = -1;
-      greenArrow._sig = "";
-      grayArrow._sig = "";
       drawAt(0);
       raf = requestAnimationFrame(tick);
     }
