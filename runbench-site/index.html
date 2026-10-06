@@ -26,7 +26,7 @@
       <img class="mark" src="icon.png" alt="" width="48" height="48">
       <div class="title">
         <h1>RUNBENCH</h1>
-        <span class="version">beta · 1.0.2<span id="count" hidden></span></span>
+        <span class="version">beta · 1.1.0<span id="count" hidden></span></span>
       </div>
       <p class="summary">A desktop workbench for image and video prompts, on the tools/APIs you already use.</p>
       <p class="summary">Context-aware AI, staged iterations, agentic live ComfyUI graph writes, and automatic file ingest.</p>
@@ -77,7 +77,7 @@
     var playing = false;
     var started = 0;
 
-    var SPEED = 1600;
+    var SPEED = 2000;
     var HOLD = 0.5;
     var FADE = 0.125;
 
@@ -229,10 +229,12 @@
         el._on = true;
       }
       var scale = len / el._max;
-      if (axis === "x")
-        el.style.transform = "translate3d(" + x + "px," + y + "px,0) scaleX(" + scale + ")";
-      else
-        el.style.transform = "translate3d(" + x + "px," + y + "px,0) scaleY(" + scale + ")";
+      var next = axis === "x"
+        ? "translate3d(" + x + "px," + y + "px,0) scaleX(" + scale + ")"
+        : "translate3d(" + x + "px," + y + "px,0) scaleY(" + scale + ")";
+      if (el._tf === next) return;
+      el._tf = next;
+      el.style.transform = next;
     }
 
     function placeArrow(hEl, vEl, headEl, p, c, hToward, vToward, m, body) {
@@ -272,8 +274,14 @@
       var bx = p <= 0 ? headX : c.x;
       var by = p <= 0 ? c.y : c.y + vToward * p;
       var angle = p <= 0 ? 90 : 0;
-      headEl.style.opacity = "1";
-      headEl.style.transform = "translate3d(" + (bx - headEl._ox) + "px," + (by - headEl._oy) + "px,0) rotate(" + angle + "deg)";
+      if (headEl._on !== true) {
+        headEl.style.opacity = "1";
+        headEl._on = true;
+      }
+      var next = "translate3d(" + (bx - headEl._ox) + "px," + (by - headEl._oy) + "px,0) rotate(" + angle + "deg)";
+      if (headEl._tf === next) return;
+      headEl._tf = next;
+      headEl.style.transform = next;
     }
 
     function planFor(g) {
@@ -346,6 +354,8 @@
     }
 
     var shown = -1;
+    var sceneKey = "";
+    var scene = null;
 
     function applyReveal(u) {
       var v = Math.round(u * 1000) / 1000;
@@ -356,17 +366,26 @@
       rise.style.opacity = String(v);
     }
 
-    function drawAt(time) {
+    function currentScene() {
+      var dpr = window.devicePixelRatio || 1;
+      var key = innerWidth + "x" + innerHeight + "@" + dpr;
+      if (scene && sceneKey === key) return scene;
       var m = metrics();
       var green = arrowGeom("green", m);
       var gray = arrowGeom("gray", m);
       ensure(m, green.body);
-      var plan = planFor(green);
-      var dist = headAt(plan, time);
-      placeArrow(gh, gv, ghead, dist - green.H, m.pt(585, 585), 1, -1, m, green.body);
-      placeArrow(yh, yv, yhead, dist - gray.H, m.pt(135, 135), -1, 1, m, gray.body);
-      applyReveal(revealOf(green, dist));
-      return plan;
+      sceneKey = key;
+      scene = { m: m, green: green, gray: gray, plan: planFor(green) };
+      return scene;
+    }
+
+    function drawAt(time) {
+      var s = currentScene();
+      var dist = headAt(s.plan, time);
+      placeArrow(gh, gv, ghead, dist - s.green.H, s.m.pt(585, 585), 1, -1, s.m, s.green.body);
+      placeArrow(yh, yv, yhead, dist - s.gray.H, s.m.pt(135, 135), -1, 1, s.m, s.gray.body);
+      applyReveal(revealOf(s.green, dist));
+      return s.plan;
     }
 
     function tick(now) {
